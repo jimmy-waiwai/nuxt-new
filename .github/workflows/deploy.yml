@@ -1,41 +1,39 @@
-# https://github.com/actions/deploy-pages#usage
 name: Deploy to GitHub Pages
+
 on:
-  workflow_dispatch:
   push:
-    branches:
-      - main
+    branches: [main] # デプロイ対象のブランチ名
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 jobs:
-  build:
+  build_deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: corepack enable
-      - uses: actions/setup-node@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          node-version: "22"
-      # Pick your own package manager and build script
-      - run: npm install
-      - run: npx nuxt build --preset github_pages
+          node-version: 20 # Nuxt 4が推奨するNode.jsバージョン
+
+      - name: Install dependencies
+        run: npm install # または pnpm/yarn
+
+      - name: Build and Prerender
+        run: npx nuxt build --preset github_pages
+        env:
+          # サブパス（例: https://<user>.github.io/<repo>/）で公開する場合に必要
+          NUXT_APP_BASE_URL: /waiwai-test2/ 
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./.output/public
-  # Deployment job
-  deploy:
-    # Add a dependency to the build job
-    needs: build
-    # Grant GITHUB_TOKEN the permissions required to make a Pages deployment
-    permissions:
-      pages: write      # to deploy to Pages
-      id-token: write   # to verify the deployment originates from an appropriate source
-    # Deploy to the github_pages environment
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    # Specify runner + deployment step
-    runs-on: ubuntu-latest
-    steps:
+          path: .output/public
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
